@@ -4,6 +4,29 @@ resource "aws_docdb_subnet_group" "main" {
   tags               = merge(local.tags, { Name = "${local.name_prefix}-subnet-group" })
 }
 
+resource "aws_security_group" "main" {
+  name        = "${local.name_prefix}-sg"
+  description = "${local.name_prefix}-sg"
+  vpc_id      = var.vpc_id
+  tags        = merge(local.tags, { Name = "${local.name_prefix}-sg" })
+
+  ingress {
+    description = "DOCDB"
+    from_port   = 27017
+    to_port     = 27017
+    protocol    = "tcp"
+    cidr_blocks = var.sg_ingress_cidr
+  }
+
+  egress {
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+}
+
 
 resource "aws_docdb_cluster" "main" {
   cluster_identifier      = "${local.name_prefix}-cluster"
@@ -13,5 +36,6 @@ resource "aws_docdb_cluster" "main" {
   backup_retention_period = var.backup_retention_period
   preferred_backup_window = var.preferred_backup_window
   skip_final_snapshot     = var.skip_final_snapshot
+  aws_docdb_subnet_group = aws_docdb_subnet_group.main.name
 }
 
